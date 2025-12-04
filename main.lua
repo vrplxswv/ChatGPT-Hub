@@ -47,7 +47,7 @@ title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
 title.TextSize = 24
 title.TextColor3 = currentTheme.text
-title.Text = "AimbotGPT.  Powered by ChatGPT"
+title.Text = "vrplxswv hub."
 
 local gradient = Instance.new("UIGradient", title)
 gradient.Rotation = 45
