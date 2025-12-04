@@ -1,65 +1,94 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
     <title>vrplxswv Hub Daily Key</title>
     <style>
         body {
-            background-color: #0e0e0e;
+            background-color: #0f0f0f;
             color: white;
             font-family: Arial, sans-serif;
             text-align: center;
-            margin-top: 100px;
+            margin-top: 120px;
         }
-        h1 {
-            font-size: 42px;
-            font-weight: bold;
-        }
-        #key {
-            font-size: 32px;
-            color: #00aaff;
-            margin-top: 20px;
-        }
-        #loading {
+        .key-box {
+            margin-top: 40px;
+            padding: 18px;
+            background-color: #1a1a1a;
+            border-radius: 8px;
+            display: inline-block;
             font-size: 28px;
-            color: #0099ff;
+            font-weight: bold;
+            color: #00aaff;
         }
     </style>
 </head>
 <body>
 
     <h1>vrplxswv Hub Daily Key</h1>
-    <div id="loading">Loading...</div>
-    <div id="key"></div>
+    <p>Updated every 24 hours</p>
+
+    <div id="key" class="key-box">Loading...</div>
 
     <script>
-        // Simple SHA-1 function (browser version)
-        async function sha1(msg) {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(msg);
-            const hash = await crypto.subtle.digest("SHA-1", data);
-            return Array.from(new Uint8Array(hash))
-                .map(b => b.toString(16).padStart(2, "0"))
-                .join("");
+        // Generate the SAME key as the loader
+        function sha1(msg) {
+            function rotl(n,s) { return n<<s|n>>>32-s; }
+            function tohex(i) { return ('00000000' + i.toString(16)).slice(-8); }
+
+            let H0 = 0x67452301, H1 = 0xEFCDAB89, H2 = 0x98BADCFE,
+                H3 = 0x10325476, H4 = 0xC3D2E1F0;
+
+            let ml = msg.length * 8;
+            msg += String.fromCharCode(0x80);
+            while (msg.length % 64 !== 56) msg += "\x00";
+
+            for (let i = 7; i >= 0; i--)
+                msg += String.fromCharCode((ml >>> (i * 8)) & 0xFF);
+
+            for (let i = 0; i < msg.length; i += 64) {
+                let chunk = msg.slice(i, i+64);
+                let w = [];
+                for (let j = 0; j < 16; j++) {
+                    w[j] = (chunk.charCodeAt(j*4) << 24) |
+                           (chunk.charCodeAt(j*4+1) << 16) |
+                           (chunk.charCodeAt(j*4+2) << 8) |
+                           (chunk.charCodeAt(j*4+3));
+                }
+                for (let j = 16; j < 80; j++)
+                    w[j] = rotl(w[j-3] ^ w[j-8] ^ w[j-14] ^ w[j-16], 1);
+
+                let a=H0, b=H1, c=H2, d=H3, e=H4;
+                for (let j = 0; j < 80; j++) {
+                    let f,k;
+                    if (j < 20) { f=(b & c) ^ (~b & d); k=0x5A827999; }
+                    else if (j < 40) { f=b ^ c ^ d; k=0x6ED9EBA1; }
+                    else if (j < 60) { f=(b & c) ^ (b & d) ^ (c & d); k=0x8F1BBCDC; }
+                    else { f=b ^ c ^ d; k=0xCA62C1D6; }
+
+                    let temp = (rotl(a,5) + f + e + k + w[j]) >>> 0;
+                    e=d; d=c; c=rotl(b,30); b=a; a=temp;
+                }
+                H0=(H0+a)>>>0; H1=(H1+b)>>>0; H2=(H2+c)>>>0;
+                H3=(H3+d)>>>0; H4=(H4+e)>>>0;
+            }
+
+            return (
+                tohex(H0)+tohex(H1)+tohex(H2)+
+                tohex(H3)+tohex(H4)
+            );
         }
 
-        async function generateKey() {
-            const date = new Date();
+        function updateKey(){
+            let d = new Date();
+            let raw = "vrplxswv" + d.getUTCFullYear()
+                + ("0" + (d.getUTCMonth()+1)).slice(-2)
+                + ("0" + d.getUTCDate()).slice(-2);
 
-            const year = date.getUTCFullYear();
-            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-            const day = String(date.getUTCDate()).padStart(2, '0');
-
-            const raw = "vrplxswv" + year + month + day;
-
-            const hash = await sha1(raw);
-            const key = hash.substring(0, 12);
-
-            document.getElementById("loading").style.display = "none";
+            let key = sha1(raw).slice(0, 12);
             document.getElementById("key").innerText = key;
         }
 
-        generateKey();
+        updateKey();
     </script>
 
 </body>
