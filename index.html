@@ -1,114 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>vrplxswv Hub Daily Key</title>
-
-<style>
-    body {
-        margin: 0;
-        background: #0f0f0f;
-        font-family: Arial, sans-serif;
-        color: white;
-        text-align: center;
-    }
-
-    h1 {
-        margin-top: 50px;
-        font-size: 32px;
-        font-weight: 700;
-    }
-
-    #loading {
-        font-size: 26px;
-        color: #1e90ff;
-        margin-top: 40px;
-    }
-
-    #keyBox {
-        display: none;
-        margin-top: 50px;
-        font-size: 28px;
-        font-weight: bold;
-        padding: 15px 25px;
-        background: #1a1a1a;
-        border-radius: 10px;
-        width: 350px;
-        margin-left: auto;
-        margin-right: auto;
-        color: #00ff85;
-        border: 2px solid #00ff85;
-    }
-
-    #copyBtn {
-        display: none;
-        margin-top: 25px;
-        padding: 12px 25px;
-        font-size: 20px;
-        background: #1e90ff;
-        border: none;
-        color: white;
-        border-radius: 8px;
-        cursor: pointer;
-    }
-
-    #copyMsg {
-        color: lime;
-        margin-top: 15px;
-        display: none;
-        font-size: 22px;
-    }
-</style>
+    <meta charset="UTF-8">
+    <title>vrplxswv Hub Daily Key</title>
+    <style>
+        body {
+            background-color: #0e0e0e;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 100px;
+        }
+        h1 {
+            font-size: 42px;
+            font-weight: bold;
+        }
+        #key {
+            font-size: 32px;
+            color: #00aaff;
+            margin-top: 20px;
+        }
+        #loading {
+            font-size: 28px;
+            color: #0099ff;
+        }
+    </style>
 </head>
-
 <body>
+
     <h1>vrplxswv Hub Daily Key</h1>
-
     <div id="loading">Loading...</div>
+    <div id="key"></div>
 
-    <div id="keyBox"></div>
-    <button id="copyBtn">Copy Key</button>
-    <div id="copyMsg">Copied!</div>
-
-<script>
-async function fetchKey() {
-    try {
-        // Load raw dailykey from GitHub Pages
-        const response = await fetch("https://vrplxswv.github.io/ChatGPT-Hub/dailykey.txt");
-
-        if (!response.ok) {
-            document.getElementById("loading").innerText = "Failed to load key.";
-            return;
+    <script>
+        // Simple SHA-1 function (browser version)
+        async function sha1(msg) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(msg);
+            const hash = await crypto.subtle.digest("SHA-1", data);
+            return Array.from(new Uint8Array(hash))
+                .map(b => b.toString(16).padStart(2, "0"))
+                .join("");
         }
 
-        const text = await response.text();
-        const key = text.trim();
+        async function generateKey() {
+            const date = new Date();
 
-        document.getElementById("loading").style.display = "none";
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
 
-        const box = document.getElementById("keyBox");
-        box.innerText = key;
-        box.style.display = "block";
+            const raw = "vrplxswv" + year + month + day;
 
-        const btn = document.getElementById("copyBtn");
-        btn.style.display = "inline-block";
+            const hash = await sha1(raw);
+            const key = hash.substring(0, 12);
 
-        btn.addEventListener("click", () => {
-            navigator.clipboard.writeText(key);
-            document.getElementById("copyMsg").style.display = "block";
-            setTimeout(() => {
-                document.getElementById("copyMsg").style.display = "none";
-            }, 1500);
-        });
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("key").innerText = key;
+        }
 
-    } catch (err) {
-        document.getElementById("loading").innerText = "Error loading key.";
-    }
-}
-
-fetchKey();
-</script>
+        generateKey();
+    </script>
 
 </body>
 </html>
