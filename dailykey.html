@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>vrplxswv Hub - Daily Key</title>
+    <style>
+        body {
+            background-color: #111;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 100px;
+        }
+        .key {
+            font-size: 42px;
+            color: #00aaff;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>vrplxswv Hub Daily Key</h1>
+<div id="key" class="key">Loading...</div>
+
+<script>
+    function sha1(msg) {
+        function rotl(n, s) { return n << s | n >>> (32 - s); }
+        function toHex(i) { return ('00000000' + i.toString(16)).slice(-8); }
+
+        var H0 = 0x67452301, H1 = 0xEFCDAB89, H2 = 0x98BADCFE,
+            H3 = 0x10325476, H4 = 0xC3D2E1F0;
+
+        msg += String.fromCharCode(0x80);
+        var l = msg.length / 4 + 2;
+        var N = Math.ceil(l / 16);
+        var M = [];
+
+        for (var i = 0; i < N; i++) {
+            M[i] = [];
+            for (var j = 0; j < 16; j++) {
+                var index = i * 64 + j * 4;
+                M[i][j] = (msg.charCodeAt(index) << 24) |
+                          (msg.charCodeAt(index + 1) << 16) |
+                          (msg.charCodeAt(index + 2) << 8) |
+                          (msg.charCodeAt(index + 3));
+            }
+        }
+
+        var ml = (msg.length - 1) * 8;
+        M[N - 1][14] = ml >>> 32;
+        M[N - 1][15] = ml & 0xffffffff;
+
+        for (var i = 0; i < N; i++) {
+            var W = [];
+            for (var t = 0; t < 16; t++) W[t] = M[i][t];
+            for (var t = 16; t < 80; t++) {
+                W[t] = rotl(W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16], 1);
+            }
+
+            var A = H0, B = H1, C = H2, D = H3, E = H4;
+
+            for (var t = 0; t < 80; t++) {
+                var s = Math.floor(t / 20);
+                var f = [
+                    (B & C) | (~B & D),
+                    B ^ C ^ D,
+                    (B & C) | (B & D) | (C & D),
+                    B ^ C ^ D
+                ][s];
+                var K = [0x5A827999, 0x6ED9EBA1, 0x8F1BBCDC, 0xCA62C1D6][s];
+                var temp = (rotl(A, 5) + f + E + K + W[t]) & 0xffffffff;
+                E = D;
+                D = C;
+                C = rotl(B, 30);
+                B = A;
+                A = temp;
+            }
+
+            H0 = (H0 + A) & 0xffffffff;
+            H1 = (H1 + B) & 0xffffffff;
+            H2 = (H2 + C) & 0xffffffff;
+            H3 = (H3 + D) & 0xffffffff;
+            H4 = (H4 + E) & 0xffffffff;
+        }
+
+        return toHex(H0) + toHex(H1) + toHex(H2) + toHex(H3) + toHex(H4);
+    }
+
+    // Today’s key:
+    let d = new Date();
+    let raw = "vrplxswv" + d.getUTCFullYear() + (d.getUTCMonth()+1) + d.getUTCDate();
+    let key = sha1(raw).substring(0, 12);
+
+    document.getElementById("key").innerText = key;
+</script>
+
+</body>
+</html>
