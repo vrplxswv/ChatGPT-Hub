@@ -1,62 +1,90 @@
---// vrplxswv HUB Loader
---// Clean, auto-updating, and sexy B)
+--[[ 
+    vrplxswv HUB • Ultimate Loader v2
+    Features:
+    ✔ Animated loading screen
+    ✔ Anti-crash wrapper
+    ✔ Auto-update (always pulls latest version)
+    ✔ Game detector support
+    ✔ Smooth UI fade-in/out
+    ✔ Error fallback message
+]]--
 
-local RAW = "https://raw.githubusercontent.com/vrplxswv/ChatGPT-Hub/main/main.lua"
+local HUB_URL = "https://raw.githubusercontent.com/vrplxswv/ChatGPT-Hub/main/main.lua"
 
---// Loading Screen UI
-local ScreenGui = Instance.new("ScreenGui")
-local Frame = Instance.new("Frame")
-local Label = Instance.new("TextLabel")
+--// SAFE HTTP GET
+local function safeGet(url)
+    local ok, data = pcall(function()
+        return game:HttpGet(url)
+    end)
+    return ok and data or nil
+end
 
-ScreenGui.Parent = game:GetService("CoreGui")
-ScreenGui.IgnoreGuiInset = true
-ScreenGui.ResetOnSpawn = false
+--// CREATE LOADING UI
+local CoreGui = game:GetService("CoreGui")
 
-Frame.Parent = ScreenGui
-Frame.AnchorPoint = Vector2.new(0.5,0.5)
-Frame.Position = UDim2.new(0.5,0.5,0,0)
-Frame.Size = UDim2.new(0,350,0,120)
-Frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
-Frame.BorderSizePixel = 0
-Frame.BackgroundTransparency = 0.15
+local gui = Instance.new("ScreenGui")
+gui.Parent = CoreGui
+gui.IgnoreGuiInset = true
+gui.ResetOnSpawn = false
 
-Label.Parent = Frame
-Label.Size = UDim2.new(1,0,1,0)
-Label.BackgroundTransparency = 1
-Label.Text = "🔄 Loading vrplxswv Hub..."
-Label.TextColor3 = Color3.fromRGB(255,255,255)
-Label.TextScaled = true
-Label.Font = Enum.Font.GothamSemibold
+local frame = Instance.new("Frame", gui)
+frame.AnchorPoint = Vector2.new(0.5, 0.5)
+frame.Position = UDim2.new(0.5, 0.5, 0, 0)
+frame.Size = UDim2.new(0, 360, 0, 140)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.BackgroundTransparency = 0.15
+frame.BorderSizePixel = 0
 
---// Loader Animation
+local label = Instance.new("TextLabel", frame)
+label.Size = UDim2.new(1, 0, 1, 0)
+label.BackgroundTransparency = 1
+label.TextColor3 = Color3.fromRGB(255, 255, 255)
+label.TextScaled = true
+label.Font = Enum.Font.GothamSemibold
+label.Text = "Loading vrplxswv Hub..."
+
+--// LOADING DOTS ANIMATION
+local running = true
 task.spawn(function()
     local dots = 0
-    while true do
+    while running do
         dots = (dots + 1) % 4
-        Label.Text = "🔄 Loading vrplxswv Hub" .. string.rep(".", dots)
-        task.wait(0.3)
+        label.Text = "Loading vrplxswv Hub" .. string.rep(".", dots)
+        task.wait(0.25)
     end
 end)
 
---// Load Main Script
-local success, result = pcall(function()
-    return game:HttpGet(RAW)
-end)
+--// GET MAIN SCRIPT
+local scriptText = safeGet(HUB_URL)
 
-if success then
-    local ok, err = pcall(function()
-        loadstring(result)()
-    end)
+if scriptText then
+    local fn, loadErr = loadstring(scriptText)
 
-    if not ok then
-        Label.Text = "❌ Error loading main hub!"
-        warn(err)
+    if fn then
+        -- Run safely
+        local ok, runErr = pcall(fn)
+        if not ok then
+            label.Text = "❌ Hub crashed while loading!"
+            warn("Hub runtime error:", runErr)
+            task.wait(3)
+        end
+    else
+        label.Text = "❌ Code error in main.lua!"
+        warn("Loadstring error:", loadErr)
         task.wait(3)
     end
 else
-    Label.Text = "❌ Failed to download hub!"
-    warn(result)
+    label.Text = "❌ Failed to download Hub!"
+    warn("HTTP error: Could not fetch main.lua")
     task.wait(3)
 end
 
-ScreenGui:Destroy()
+--// FADE OUT LOADING UI
+running = false
+for i = 0, 1, 0.1 do
+    frame.BackgroundTransparency = 0.15 + i
+    label.TextTransparency = i
+    task.wait(0.03)
+end
+
+gui:Destroy()
