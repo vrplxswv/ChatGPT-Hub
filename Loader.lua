@@ -1,25 +1,48 @@
 --========================================================--
--- vrplxswv HUB LOADER V4 (FINAL + FIXED)
+-- vrplxswv HUB LOADER V5 (FINAL UPDATED + NEW WEBHOOK)
 --========================================================--
 
+-- UNIVERSAL EXECUTOR WRAPPERS
+local load = loadstring or load or function() error("Executor does not support loadstring") end
+local request = request or http_request or syn and syn.request
+
+-- SAFE COREGUI PARENT
+local function safeParent()
+    local ok, result = pcall(function()
+        return gethui and gethui() or game:GetService("CoreGui")
+    end)
+    if ok then
+        return result
+    else
+        -- fallback for restricted executors (Delta, Arceus, Codex)
+        local folder = Instance.new("Folder")
+        folder.Name = "vrplxswv_FallbackUI"
+        folder.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+        return folder
+    end
+end
+
+local ParentUI = safeParent()
+
+---------------------------------------------------------------------
+-- URLS
+---------------------------------------------------------------------
 local HUB_URL  = "https://raw.githubusercontent.com/vrplxswv/ChatGPT-Hub/main/main.lua"
 local OWNER_URL = "https://vrplxswv.github.io/ChatGPT-Hub/owner.txt"
-local KEY_PAGE = "https://vrplxswv.github.io/ChatGPT-Hub/"
 local WORKINK = "https://work.ink/29nQ/chatgpt-hub"
 
 local HttpService = game:GetService("HttpService")
-local CoreGui = game:GetService("CoreGui")
 
 ---------------------------------------------------------------------
--- SAFE BASE64 DECODER (UNIVERSAL)
+-- UNIVERSAL BASE64 DECODER
 ---------------------------------------------------------------------
-local base64chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+local b64chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
 local function b64decode(data)
-	data = data:gsub("[^" .. base64chars .. "=]", "")
+	data = data:gsub("[^" .. b64chars .. "=]", "")
 	return (data:gsub(".", function(x)
 		if x == "=" then return "" end
-		local r, f = "", (base64chars:find(x) - 1)
+		local r, f = "", (b64chars:find(x) - 1)
 		for i = 6, 1, -1 do r = r .. ((f >> (i - 1)) & 1) end
 		return r
 	end):gsub("%d%d%d?%d?%d?%d?%d?%d?", function(bits)
@@ -29,12 +52,12 @@ local function b64decode(data)
 end
 
 ---------------------------------------------------------------------
--- OBFUSCATED WEBHOOK (NOW UNIVERSAL)
+-- NEW OBFUSCATED WEBHOOK (2-PART BASE64)
 ---------------------------------------------------------------------
-local wb_a = "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3Mv"
-local wb_b = "MTQ0NTk2MDIyNzA0MzE1MTk5NC81d2w3Mk5ZSEt5N09xeGc="
+local wb_a = "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQ0NTk2NTQ1MzcyNDc0OTk0NQ=="
+local wb_b = "L216YjRhN21RcWxzRFdMaXNhdjd0Nkdic3JGQ194amxfR1R4OEVpYUJ1MWNRcjhncXJPblB2aXNub1VTMDFtSC1ZM3Iw"
 
-local WEBHOOK = b64decode(wb_a .. wb_b)
+local WEBHOOK = b64decode(wb_a) .. b64decode(wb_b)
 
 ---------------------------------------------------------------------
 -- SHA1 FUNCTION
@@ -46,8 +69,7 @@ local function sha1(str)
 	end
 
 	local h0,h1,h2,h3,h4 =
-		0x67452301,0xEFCDAB89,0x98BADCFE,
-		0x10325476,0xC3D2E1F0
+		0x67452301,0xEFCDAB89,0x98BADCFE,0x10325476,0xC3D2E1F0
 
 	str = str .. string.char(0x80)
 	while (#str % 64) ~= 56 do str = str .. string.char(0) end
@@ -68,7 +90,7 @@ local function sha1(str)
 		end
 
 		for i = 16, 79 do
-			w[i] = leftrotate(bit.bxor(w[i-3], w[i-8], w[i-14], w[i-16]), 1)
+			w[i] = leftrotate(bit.bxor(w[i-3],w[i-8],w[i-14],w[i-16]),1)
 		end
 
 		local a,b,c,d,e = h0,h1,h2,h3,h4
@@ -108,7 +130,7 @@ end
 ---------------------------------------------------------------------
 local t = os.date("!*t")
 local RAW = "vrplxswv" .. t.year .. string.format("%02d",t.month) .. string.format("%02d",t.day)
-local DAILY_KEY = sha1(RAW):sub(1, 12)
+local DAILY_KEY = sha1(RAW):sub(1,12)
 
 ---------------------------------------------------------------------
 -- OWNER BYPASS
@@ -129,6 +151,7 @@ local function getCountry()
 	local ok,res = pcall(function()
 		return game:HttpGet("https://ipinfo.io/json")
 	end)
+
 	if not ok then return "Unknown" end
 
 	local d = HttpService:JSONDecode(res)
@@ -136,66 +159,44 @@ local function getCountry()
 end
 
 ---------------------------------------------------------------------
--- COUNTER
----------------------------------------------------------------------
-local counter = 0
-local lastDay = t.day
-
-local function incrementCounter()
-	local now = os.date("!*t")
-	if now.day ~= lastDay then
-		counter = 0
-		lastDay = now.day
-	end
-	counter += 1
-	return counter
-end
-
----------------------------------------------------------------------
 -- DISCORD LOGGER
 ---------------------------------------------------------------------
-local function sendLog(result, enteredKey)
+local function sendLog(result, key)
+	local plr = game.Players.LocalPlayer
 	local country = getCountry()
-	local user = game.Players.LocalPlayer
 	local exec = identifyexecutor and identifyexecutor() or "Unknown"
 
-	local data = {
+	local embed = {
 		username = "vrplxswv Hub Logger",
 		embeds = {{
-			title = "vrplxswv Hub – Key Check",
+			title = "Key Check Event",
 			color = result=="PASS" and 65280 or (result=="OWNER" and 16776960 or 16711680),
 			fields = {
-				{ name="User", value=user.Name.." ("..user.UserId..")", inline=true },
-				{ name="Game", value=game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name, inline=true },
-				{ name="Executor", value=exec, inline=true },
-				{ name="Entered Key", value=enteredKey, inline=true },
-				{ name="Expected Key", value=DAILY_KEY, inline=true },
-				{ name="Result", value=result, inline=true },
-				{ name="Country", value=country, inline=true },
-				{ name="Redeems Today", value=tostring(counter), inline=true },
+				{name="User", value=plr.Name.." ("..plr.UserId..")"},
+				{name="Executor", value=exec},
+				{name="Entered Key", value=key},
+				{name="Expected Key", value=DAILY_KEY},
+				{name="Result", value=result},
+				{name="Country", value=country}
 			},
-			footer = { text="vrplxswv Hub Logger" },
 			timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
 		}}
 	}
 
-	local body = HttpService:JSONEncode(data)
-
 	pcall(function()
-		local req = request or http_request or syn.request
-		req({
+		request({
 			Url = WEBHOOK,
 			Method = "POST",
-			Headers={["Content-Type"]="application/json"},
-			Body = body
+			Headers = {["Content-Type"]="application/json"},
+			Body = HttpService:JSONEncode(embed)
 		})
 	end)
 end
 
 ---------------------------------------------------------------------
--- UI SETUP
+-- UI
 ---------------------------------------------------------------------
-local gui = Instance.new("ScreenGui", CoreGui)
+local gui = Instance.new("ScreenGui", ParentUI)
 gui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame", gui)
@@ -203,107 +204,68 @@ frame.AnchorPoint = Vector2.new(0.5,0.5)
 frame.Position = UDim2.new(0.5,0,0.5,0)
 frame.Size = UDim2.new(0,350,0,260)
 frame.BackgroundColor3 = Color3.fromRGB(18,18,18)
-frame.BorderSizePixel = 0
 
 local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1,0,0.2,0)
-title.Position = UDim2.new(0,0,0.05,0)
+title.Size = UDim2.new(1,0,0.15,0)
 title.Text = "vrplxswv Hub"
-title.Font = Enum.Font.GothamSemibold
 title.BackgroundTransparency = 1
 title.TextScaled = true
 title.TextColor3 = Color3.fromRGB(255,255,255)
+title.Font = Enum.Font.GothamSemibold
 
 local msg = Instance.new("TextLabel", frame)
-msg.Size = UDim2.new(1,0,0.13,0)
-msg.Position = UDim2.new(0,0,0.28,0)
-msg.Text = "Complete Work.ink → paste key"
+msg.Size = UDim2.new(1,0,0.12,0)
+msg.Position = UDim2.new(0,0,0.16,0)
+msg.Text = "Enter Key"
 msg.BackgroundTransparency = 1
-msg.TextColor3 = Color3.fromRGB(255,255,255)
 msg.TextScaled = true
+msg.TextColor3 = Color3.fromRGB(255,255,255)
 msg.Font = Enum.Font.Gotham
 
 local input = Instance.new("TextBox", frame)
 input.Size = UDim2.new(0.8,0,0.15,0)
-input.Position = UDim2.new(0.1,0,0.45,0)
-input.PlaceholderText = "Enter key"
+input.Position = UDim2.new(0.1,0,0.3,0)
 input.BackgroundColor3 = Color3.fromRGB(35,35,35)
 input.TextColor3 = Color3.fromRGB(255,255,255)
-input.Font = Enum.Font.Gotham
+input.PlaceholderText = "Key"
 input.TextScaled = true
 input.BorderSizePixel = 0
 
----------------------------------------------------------------------
--- COPY WORK.INK BUTTON
----------------------------------------------------------------------
 local copy = Instance.new("TextButton", frame)
-copy.Size = UDim2.new(0.8,0,0.12,0)
-copy.Position = UDim2.new(0.1,0,0.63,0)
+copy.Size = UDim2.new(0.8,0,0.15,0)
+copy.Position = UDim2.new(0.1,0,0.48,0)
 copy.Text = "Copy Work.ink Link"
-copy.Font = Enum.Font.GothamSemibold
-copy.TextColor3 = Color3.fromRGB(255,255,255)
 copy.BackgroundColor3 = Color3.fromRGB(0,140,255)
 copy.TextScaled = true
-copy.BorderSizePixel = 0
-
-local copied = Instance.new("TextLabel", frame)
-copied.Size = UDim2.new(0.8,0,0.08,0)
-copied.Position = UDim2.new(0.1,0,0.75,0)
-copied.BackgroundTransparency = 1
-copied.TextScaled = true
-copied.Font = Enum.Font.Gotham
-copied.TextColor3 = Color3.fromRGB(0,255,0)
-copied.Text = ""
-copied.Visible = false
 
 copy.MouseButton1Click:Connect(function()
-	if setclipboard then setclipboard(WORKINK)
-	elseif toclipboard then toclipboard(WORKINK) end
-
-	copied.Text = "Copied!"
-	copied.Visible = true
-	task.delay(1.5, function()
-		copied.Visible = false
-	end)
+	if setclipboard then setclipboard(WORKINK) end
+	msg.Text = "Copied!"
 end)
 
----------------------------------------------------------------------
--- SUBMIT BUTTON
----------------------------------------------------------------------
 local submit = Instance.new("TextButton", frame)
-submit.Size = UDim2.new(0.8,0,0.15,0)
-submit.Position = UDim2.new(0.1,0,0.85,0)
+submit.Size = UDim2.new(0.8,0,0.18,0)
+submit.Position = UDim2.new(0.1,0,0.7,0)
 submit.Text = "Submit Key"
-submit.Font = Enum.Font.GothamSemibold
-submit.TextColor3 = Color3.fromRGB(255,255,255)
 submit.BackgroundColor3 = Color3.fromRGB(0,170,255)
 submit.TextScaled = true
-submit.BorderSizePixel = 0
 
 submit.MouseButton1Click:Connect(function()
 	local typed = input.Text
 
-	-- OWNER BYPASS
 	if isOwner() then
-		incrementCounter()
 		sendLog("OWNER", typed)
-		msg.Text = "Owner bypass ✓"
-		task.wait(0.35)
 		gui:Destroy()
-		return loadstring(game:HttpGet(HUB_URL))()
+		return load(game:HttpGet(HUB_URL))()
 	end
 
-	-- NORMAL KEY CHECK
 	if typed == DAILY_KEY then
-		incrementCounter()
 		sendLog("PASS", typed)
-		msg.Text = "Key correct ✓"
-		task.wait(0.35)
 		gui:Destroy()
-		loadstring(game:HttpGet(HUB_URL))()
+		load(game:HttpGet(HUB_URL))()
 	else
 		sendLog("FAIL", typed)
-		msg.Text = "Invalid key!"
+		msg.Text = "Invalid Key!"
 		msg.TextColor3 = Color3.fromRGB(255,60,60)
 	end
 end)
