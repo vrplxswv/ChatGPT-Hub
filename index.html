@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>vrplxswv Hub Key</title>
+<title>vrplxswv Hub Daily Key</title>
 <style>
 body {
     background: #0f0f0f;
@@ -15,36 +15,39 @@ body {
     margin-top: 20px;
     color: #00aaff;
 }
+.warning {
+    font-size: 30px;
+    margin-top: 20px;
+    color: red;
+}
 </style>
 </head>
 <body>
 
-<h1>vrplxswv Hub Daily Key</h1>
-<p class="key" id="keyText">Loading...</p>
+<h1 id="title">vrplxswv Hub Daily Key</h1>
+<p class="key" id="keyText"></p>
 
 <script>
-// Generate same daily key as Loader.lua
-
-function generateTodayKey() {
+// Check unlock token in URL
+const params = new URLSearchParams(window.location.search);
+if (!params.get("unlock")) {
+    // no unlock token → lock the page
+    document.getElementById("title").innerText = "ACCESS DENIED";
+    document.getElementById("keyText").innerHTML =
+        "<span class='warning'>You must complete the Work.ink task.</span>";
+} else {
+    // Generate same daily key as Loader.lua
     const now = new Date();
-    const year = now.getUTCFullYear();
-    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(now.getUTCDate()).padStart(2, '0');
+    const day = now.getUTCDate();
 
-    const base = `${year}-${month}-${day}`;
-    const salted = (parseInt(day) * 1337).toString();
-
-    // Fake GUID prefix (8 random hex characters)
     const hex = "abcdef0123456789";
     let prefix = "";
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 8; i++)
         prefix += hex[Math.floor(Math.random() * hex.length)];
-    }
 
-    return prefix + salted;
+    const key = prefix + String(day * 1337);
+    document.getElementById("keyText").innerText = key;
 }
-
-document.getElementById("keyText").innerText = generateTodayKey();
 </script>
 
 </body>
