@@ -1,7 +1,3 @@
---========================================================--
--- vrplxswv HUB LOADER V6 (FINAL / LUA-ONLY DAILY KEY)
---========================================================--
-
 local HUB_URL   = "https://raw.githubusercontent.com/vrplxswv/ChatGPT-Hub/main/main.lua"
 local OWNER_URL = "https://vrplxswv.github.io/ChatGPT-Hub/owner.txt"
 local WORKINK   = "https://work.ink/29nQ/chatgpt-hub"
@@ -9,11 +5,8 @@ local WORKINK   = "https://work.ink/29nQ/chatgpt-hub"
 local HttpService = game:GetService("HttpService")
 local CoreGui = game:GetService("CoreGui")
 
----------------------------------------------------------------------
--- UNIVERSAL BASE64 DECODER
----------------------------------------------------------------------
+-- Base64 Decoder
 local base64chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-
 local function b64decode(data)
 	data = data:gsub("[^" .. base64chars .. "=]", "")
 	return (data:gsub(".", function(x)
@@ -27,17 +20,12 @@ local function b64decode(data)
 	end))
 end
 
----------------------------------------------------------------------
--- OBFUSCATED WEBHOOK
----------------------------------------------------------------------
+-- Webhook (obfuscated)
 local wb_a = "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3Mv"
 local wb_b = "MTQ0NTk2NTQ1MzcyNDc0OTk0NS9temI0YTdtUXFsc0RXTGlzYXY3dDZHYnNyRkNfeGpsX0dUeDhFaWFCdTFjUnE4Z3FyT25Qdmlzbm9VUzAxbUgtWTNyMA=="
-
 local WEBHOOK = b64decode(wb_a .. wb_b)
 
----------------------------------------------------------------------
--- SHA1 FUNCTION
----------------------------------------------------------------------
+-- SHA1
 local function sha1(str)
     local bit = bit32
     local function leftrotate(x,n)
@@ -65,7 +53,6 @@ local function sha1(str)
                 | bit.lshift(str:byte(s+2),8)
                 | str:byte(s+3)
         end
-
         for i = 16, 79 do
             w[i] = leftrotate(bit.bxor(w[i-3], w[i-8], w[i-14], w[i-16]), 1)
         end
@@ -102,16 +89,12 @@ local function sha1(str)
     return string.format("%08x%08x%08x%08x%08x", h0,h1,h2,h3,h4)
 end
 
----------------------------------------------------------------------
--- DAILY KEY (LUA-ONLY — NO WEBSITE)
----------------------------------------------------------------------
+-- Daily Key
 local t = os.date("!*t")
 local RAW = "vrplxswv" .. t.year .. string.format("%02d",t.month) .. string.format("%02d",t.day)
-local DAILY_KEY = sha1(RAW):sub(1, 12)
+local DAILY_KEY = sha1(RAW):sub(1,12)
 
----------------------------------------------------------------------
--- OWNER BYPASS
----------------------------------------------------------------------
+-- Owner Check
 local function getOwnerId()
 	local raw = game:HttpGet(OWNER_URL)
 	return tonumber(raw:match("%d+"))
@@ -121,9 +104,7 @@ local function isOwner()
 	return game.Players.LocalPlayer.UserId == getOwnerId()
 end
 
----------------------------------------------------------------------
--- COUNTRY LOOKUP
----------------------------------------------------------------------
+-- Country Lookup
 local function getCountry()
 	local ok,res = pcall(function()
 		return game:HttpGet("https://ipinfo.io/json")
@@ -133,9 +114,7 @@ local function getCountry()
 	return d.country or "Unknown"
 end
 
----------------------------------------------------------------------
--- DISCORD LOGGING
----------------------------------------------------------------------
+-- Logging
 local counter = 0
 local lastDay = t.day
 
@@ -179,9 +158,7 @@ local function sendLog(result, enteredKey)
 	end)
 end
 
----------------------------------------------------------------------
--- UI CREATION
----------------------------------------------------------------------
+-- UI
 local gui = Instance.new("ScreenGui", CoreGui)
 gui.ResetOnSpawn = false
 
