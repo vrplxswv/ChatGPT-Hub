@@ -1,5 +1,5 @@
 local HUB_URL = "https://raw.githubusercontent.com/vrplxswv/ChatGPT-Hub/main/main.lua"
-local KEY_URL = "https://vrplxswv.github.io/ChatGPT-Hub/dailykey.txt"
+local KEY_URL = "https://vrplxswv.github.io/ChatGPT-Hub/"
 local OWNER_URL = "https://vrplxswv.github.io/ChatGPT-Hub/owner.txt"
 
 local HttpService = game:GetService("HttpService")
