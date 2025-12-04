@@ -1,4 +1,4 @@
-local HUB_URL = "https://raw.githubusercontent.com/vrplxswv/ChatGPT-Hub/main/main.lua
+local HUB_URL = "https://raw.githubusercontent.com/vrplxswv/ChatGPT-Hub/main/main.lua"
 local HttpService = game:GetService("HttpService")
 local CoreGui = game:GetService("CoreGui")
 
@@ -63,55 +63,58 @@ local function setProgress(percent, text)
 end
 
 ---------------------------------------------------------------------
--- DAILY AUTO-ROTATING KEY SYSTEM (every 24 hours)
+-- MEDIUM SECURITY WORK.INK SYSTEM + HIDDEN URL
 ---------------------------------------------------------------------
 
--- CHANGE THIS ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-local WORKINK_URL = "PUT_YOUR_WORKINK_LINK_HERE"
--- CHANGE THIS ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+-- Encoded Work.ink link (Base64)
+local encodedURL = "aHR0cHM6Ly93b3JrLmluay8yOW5RL2NoYXRncHQtSHVi"
+local WORKINK_URL = HttpService:Base64Decode(encodedURL)
 
--- Daily key source on GitHub (use AUTO)
-local dailyKeySource = safeGet("https://raw.githubusercontent.com/vrplxswv/ChatGPT-Hub/main/dailykey.lua")
+-- Show quick notice
+setclipboard(WORKINK_URL)
+print("Work.ink link copied:", WORKINK_URL)
+
+---------------------------------------------------------------------
+-- DAILY AUTO-GENERATED KEY (Loader Side)
+---------------------------------------------------------------------
 
 local function generateTodayKey()
-    -- key = deterministic but unguessable
-    local d = os.date("!*t") -- UTC date
-    local seed = string.format("%04d-%02d-%02d", d.year, d.month, d.day)
-    --  hash-ish random key based on date
-    local raw = seed .. "vrplxswv" .. (d.day * 1337)
-    local encoded = HttpService:GenerateGUID(false):gsub("%-", ""):sub(1,8)
-    return encoded .. tostring(d.day * 1337)
+    local d = os.date("!*t") -- UTC-based
+    local day = d.day
+
+    -- Generate prefix (8 hex chars)
+    local hex = "abcdef0123456789"
+    local prefix = ""
+    for i = 1, 8 do
+        prefix = prefix .. hex:sub(math.random(1, #hex), math.random(1, #hex))
+    end
+
+    return prefix .. tostring(day * 1337)
 end
 
--- Determine today's key
-local TODAY_KEY = ""
-if dailyKeySource and dailyKeySource:find("AUTO") then
-    TODAY_KEY = generateTodayKey()
-else
-    TODAY_KEY = dailyKeySource
-end
+local TODAY_KEY = generateTodayKey()
+print("Today's Key:", TODAY_KEY)
 
-print("Today's Key: ", TODAY_KEY)
+---------------------------------------------------------------------
+-- READ SAVED KEY
+---------------------------------------------------------------------
 
--- load saved key (if exists)
 local SAVED_KEY = ""
 if isfile and isfile("vrplx_key.txt") then
     SAVED_KEY = readfile("vrplx_key.txt")
 end
 
-local function isKeyValid(key)
-    return tostring(key) == tostring(TODAY_KEY)
+local function isKeyValid(k)
+    return tostring(k) == tostring(TODAY_KEY)
 end
 
 ---------------------------------------------------------------------
--- KEY ENTRY UI (when user has no valid key)
+-- KEY INPUT UI (if user has no valid saved key)
 ---------------------------------------------------------------------
 
 if not isKeyValid(SAVED_KEY) then
 
-    status.Text = "Key required! Link copied."
-    setclipboard(WORKINK_URL)
-
+    status.Text = "Key required! Link copied to clipboard."
     bar:TweenSize(UDim2.new(0.1,0,1,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
 
     local input = Instance.new("TextBox", frame)
@@ -149,8 +152,9 @@ if not isKeyValid(SAVED_KEY) then
 end
 
 ---------------------------------------------------------------------
--- KEY VALID — LOAD HUB
+-- IF KEY IS VALID → LOAD HUB
 ---------------------------------------------------------------------
+
 for i = 1, 10 do
     setProgress(i/10, "Loading Hub...")
     task.wait(0.1)
