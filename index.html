@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>vrplxswv Hub Key</title>
+<style>
+body {
+    background: #0f0f0f;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin-top: 150px;
+}
+.key {
+    font-size: 40px;
+    margin-top: 20px;
+    color: #00aaff;
+}
+</style>
+</head>
+<body>
+
+<h1>vrplxswv Hub Daily Key</h1>
+<p class="key" id="keyText">Loading...</p>
+
+<script>
+// Generate same daily key as Loader.lua
+
+function generateTodayKey() {
+    const now = new Date();
+    const year = now.getUTCFullYear();
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(now.getUTCDate()).padStart(2, '0');
+
+    const base = `${year}-${month}-${day}`;
+    const salted = (parseInt(day) * 1337).toString();
+
+    // Fake GUID prefix (8 random hex characters)
+    const hex = "abcdef0123456789";
+    let prefix = "";
+    for (let i = 0; i < 8; i++) {
+        prefix += hex[Math.floor(Math.random() * hex.length)];
+    }
+
+    return prefix + salted;
+}
+
+document.getElementById("keyText").innerText = generateTodayKey();
+</script>
+
+</body>
+</html>
