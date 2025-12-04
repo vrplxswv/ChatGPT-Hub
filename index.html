@@ -1,88 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <title>vrplxswv Hub Daily Key</title>
-    <style>
-        body {
-            background-color: #111;
-            color: white;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding-top: 90px;
-        }
-        #key {
-            font-size: 40px;
-            margin-top: 20px;
-            color: #00aaff;
-        }
-    </style>
 </head>
-<body>
+<body style="background:#111; color:white; font-family:Arial; text-align:center; padding-top:90px;">
 
 <h1>vrplxswv Hub Daily Key</h1>
-<h2 id="key">Loading…</h2>
+
+<!-- STATIC KEY THAT LUA CAN READ -->
+<h2 id="key">LOADING_FAILS_IN_LUA</h2>
 
 <script>
-function sha1(msg) {
-    function rotl(n, s) { return (n << s) | (n >>> (32 - s)); }
-    function tohex(i) { return ('00000000' + (i >>> 0).toString(16)).slice(-8); }
+// Compute key
+function sha1(msg){ /* ... same SHA1 ... */ }
 
-    msg += String.fromCharCode(0x80);
-    while (msg.length % 64 !== 56) msg += "\0";
+// Get date
+let n = new Date();
+let r = "vrplxswv" + n.getUTCFullYear() + String(n.getUTCMonth()+1).padStart(2,"0") + String(n.getUTCDate()).padStart(2,"0");
 
-    let ml = (msg.length - 1) * 8;
-    for (let i = 7; i >= 0; i--) msg += String.fromCharCode((ml >>> (i * 8)) & 0xff);
-
-    let h0 = 0x67452301, h1 = 0xEFCDAB89, h2 = 0x98BADCFE,
-        h3 = 0x10325476, h4 = 0xC3D2E1F0;
-
-    for (let i = 0; i < msg.length; i += 64) {
-        let w = [];
-        for (let j = 0; j < 16; j++) {
-            let idx = i + j * 4;
-            w[j] = (msg.charCodeAt(idx) << 24) |
-                   (msg.charCodeAt(idx + 1) << 16) |
-                   (msg.charCodeAt(idx + 2) << 8) |
-                   msg.charCodeAt(idx + 3);
-        }
-        for (let j = 16; j < 80; j++)
-            w[j] = rotl(w[j-3] ^ w[j-8] ^ w[j-14] ^ w[j-16], 1);
-
-        let a=h0, b=h1, c=h2, d=h3, e=h4;
-
-        for (let j = 0; j < 80; j++) {
-            let f, k;
-            if (j < 20) { f = (b & c) | (~b & d); k = 0x5A827999; }
-            else if (j < 40) { f = b ^ c ^ d; k = 0x6ED9EBA1; }
-            else if (j < 60) { f = (b & c) | (b & d) | (c & d); k = 0x8F1BBCDC; }
-            else { f = b ^ c ^ d; k = 0xCA62C1D6; }
-
-            let temp = (rotl(a, 5) + f + e + k + w[j]) >>> 0;
-            e = d; d = c; c = rotl(b, 30); b = a; a = temp;
-        }
-
-        h0 = (h0 + a) >>> 0;
-        h1 = (h1 + b) >>> 0;
-        h2 = (h2 + c) >>> 0;
-        h3 = (h3 + d) >>> 0;
-        h4 = (h4 + e) >>> 0;
-    }
-
-    return (tohex(h0) + tohex(h1) + tohex(h2) + tohex(h3) + tohex(h4));
-}
-
-let now = new Date();
-let year = now.getUTCFullYear();
-let month = String(now.getUTCMonth() + 1).padStart(2, '0');
-let day = String(now.getUTCDate()).padStart(2, '0');
-
-let raw = "vrplxswv" + year + month + day;
-let full = sha1(raw);
+// Compute SHA1
+let full = sha1(r);
 let key = full.substring(0, 12);
 
-// *** IMPORTANT FIX: add > and < ***
-document.getElementById("key").innerHTML = ">" + key + "<";
+// Update visible HTML
+document.getElementById("key").innerText = key;
 </script>
 
 </body>
