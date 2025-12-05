@@ -1,0 +1,20 @@
+{
+  "name": "vrplxswv Hub",
+  "version": "1.0.0",
+  "description": "The official Lua loader + hub system for vrplxswv. Includes key system and GUI.",
+  "capabilities": {
+    "files": true
+  },
+  "tools": [
+    {
+      "name": "fetch_loader",
+      "description": "Returns the latest Loader.lua",
+      "file": "Loader.lua"
+    },
+    {
+      "name": "fetch_main",
+      "description": "Returns the main.lua hub script",
+      "file": "main.lua"
+    }
+  ]
+}
